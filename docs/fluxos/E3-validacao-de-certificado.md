@@ -1,34 +1,23 @@
-Fluxo do E3: 
+# Fluxo do E3: Validação de certificado
 
-Feito quando (da Entrega 1): Qualquer pessoa faz a inserção da chave de autenticação na interface e o sistema exibe o status e a veracidade do certificado. 
+**Feito quando (da Entrega 1):** Qualquer pessoa faz a inserção da chave de autenticação na interface e o sistema exibe o status e a veracidade do certificado. 
 
+**Passos:** 
 O usuário escolhe a forma de verificação (número de série ou PDF), insere os dados e clica em *"Verificar certificado"*.   
-
 O Frontend envia a requisição para o Backend 1 com a operação `validarCertificado` (CT9).  
-
 Cenário A — Validação via PDF: 
-
 3.1. O Backend 1 gera o hash do arquivo PDF recebido.  
-
 3.2. O Backend 1 consulta o Backend 2 (Blockchain) com a operação `consultarHashBlockchain` (CT10).  
-
 3.3. O Backend 2 (Blockchain) retorna se o registro existe e os dados armazenados (CT11). 
-
 Cenário B — Validação via Número de Série: 
-
  4.1. O Backend 1 consulta a chave diretamente no Banco de Dados (CT12).  
-
  4.2. O Banco de Dados retorna o registro encontrado ou vazio (CT13).  
-
 O Backend 1 responde ao Frontend com o status e metadados (CT14).  
-
 O Frontend exibe:  
-
 - Se válido: "Certificado válido" e os metadados. 
+- Se inválido: "Certificado inválido". 
 
- - Se inválido: "Certificado inválido". 
-
-Diagrama:
+**Diagrama:**
 ```mermaid
 sequenceDiagram
     actor Usuario as Usuário
@@ -56,3 +45,11 @@ sequenceDiagram
         Backend1-->>Frontend: CT14 respostaValidacaoCertificado (invalido)
         Frontend-->>Usuario: Exibe "Certificado inválido"
     end
+```
+
+**Contratos usados:**
+- CT10 consultarHash
+- CT11 retornoConsultaBlockchain
+- CT12 consultarCertificadoBanco
+- CT13 retornoConsultaBanco
+- CT14 respostaValidacaoCertificado

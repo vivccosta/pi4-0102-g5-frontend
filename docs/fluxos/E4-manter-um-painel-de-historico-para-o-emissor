@@ -1,0 +1,30 @@
+# Fluxo do E4: Manter um painel de histórico para o emissor
+
+**Feito quando (da Entrega 1):** O emissor formalizado faz o acesso ao painel de gerenciamento e o sistema exibe a lista de certificados gerados e sua rastreabilidade.
+
+**Passos:**
+- O Emissor formalizado acessa a página do painel de gerenciamento no sistema.
+- O Frontend chama o Backend 1 com a operação `listarCertificados` (CT15).
+- O Backend 1 consulta na coleção do Banco de Dados filtrando pelo emissor logado com a operação `certificados` (CT16).
+- O Banco de Dados devolve a lista com os registros de certificados gerados para o Backend 1.
+- O Backend 1 formata e responde ao Frontend com a lista de certificados.
+- O Frontend exibe a tabela/lista de certificados na tela para o emissor formalizado.
+
+**Diagrama:**
+```mermaid
+sequenceDiagram
+    actor Emissor as Emissor formalizado
+    participant Frontend
+    participant Backend1 as Backend 1
+    participant Banco as Banco de Dados
+    Emissor->>Frontend: acessa a página do painel
+    Frontend->>Backend1: CT15 listarCertificados
+    Backend1->>Banco: CT16 certificados
+    Banco-->>Backend1: lista de registros devolvida
+    Backend1-->>Frontend: resposta do CT15 com a lista
+    Frontend-->>Emissor: exibe histórico de certificados
+```
+
+**Contratos usados:**
+- CT15 listarCertificados
+- CT16 coleOCertificados
