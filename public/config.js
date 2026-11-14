@@ -1,0 +1,4 @@
+window.__TIMBRO_CONFIG__ = {
+  apiUrl: "http://localhost:8080",
+  wsUrl: "ws://localhost:8080"
+};
