@@ -84,8 +84,8 @@ describe('Roteamento da aplicação', () => {
     sessionStorage.setItem('timbro.sessao', JSON.stringify({
       token: 'token', nome: 'Admin', perfil: 'ADMINISTRADOR', exp: Math.floor(Date.now() / 1000) + 3600,
     }))
-    render(<MemoryRouter initialEntries={['/emissor/painel']}><App /></MemoryRouter>)
-    expect(screen.getByRole('heading', { level: 1, name: 'Administração de emissores' })).toBeInTheDocument()
+    render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><MemoryRouter initialEntries={['/emissor/painel']}><App /></MemoryRouter></QueryClientProvider>)
+    expect(screen.getByRole('heading', { level: 1, name: 'Emissores pendentes' })).toBeInTheDocument()
   })
 
   it('trata token expirado como ausência de sessão', () => {
