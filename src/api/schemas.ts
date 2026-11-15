@@ -36,6 +36,12 @@ export const RegistrarCertificadoResponseSchema = z.object({
 })
 export type RegistrarCertificadoResponse = z.infer<typeof RegistrarCertificadoResponseSchema>
 
+export const RevogarCertificadoResponseSchema = z.object({
+  sucesso: z.boolean(),
+  mensagem: z.string(),
+})
+export type RevogarCertificadoResponse = z.infer<typeof RevogarCertificadoResponseSchema>
+
 export const CertificadoResumoSchema = z.object({
   certificadoId: z.string().min(1),
   nomeAluno: z.string(),

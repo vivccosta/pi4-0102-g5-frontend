@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { http, HttpResponse } from 'msw'
-import { listarCertificados, registrarCertificado } from './certificados'
+import { listarCertificados, registrarCertificado, revogarCertificado } from './certificados'
+import { resetMockCertificados } from '@/mocks/handlers'
 import { server } from '@/mocks/server'
 import { saveSession } from '@/lib/session'
 
@@ -13,6 +14,7 @@ const payload = {
 }
 
 beforeEach(() => {
+  resetMockCertificados()
   window.__TIMBRO_CONFIG__ = { apiUrl: 'http://localhost:8080' }
   saveSession({ token: 'token-teste', nome: 'Emissor', perfil: 'EMISSOR', emissorId: 'emissor-1', exp: Math.floor(Date.now() / 1000) + 3600 })
 })
@@ -117,5 +119,68 @@ describe('listarCertificados', () => {
     sessionStorage.clear()
     await expect(listarCertificados('emissor-1')).rejects.toMatchObject({ status: 403 })
     expect(authorization).toBeNull()
+  })
+})
+
+describe('revogarCertificado', () => {
+  it('envia POST com id na URL, Bearer e sem corpo; valida a resposta', async () => {
+    let urlRecebida = ''
+    let metodo = ''
+    let authorization: string | null = null
+    let corpo = 'nao-consultado'
+    server.use(http.post('*/api/certificados/:certificadoId/revogar', async ({ request }) => {
+      urlRecebida = request.url
+      metodo = request.method
+      authorization = request.headers.get('Authorization')
+      corpo = await request.text()
+      return HttpResponse.json({ sucesso: true, mensagem: 'Certificado revogado com sucesso.' })
+    }))
+
+    await expect(revogarCertificado(123)).resolves.toEqual({
+      sucesso: true,
+      mensagem: 'Certificado revogado com sucesso.',
+    })
+    expect(metodo).toBe('POST')
+    expect(urlRecebida).toBe('http://localhost:8080/api/certificados/123/revogar')
+    expect(authorization).toBe('Bearer token-teste')
+    expect(corpo).toBe('')
+  })
+
+  it.each([
+    [404, 'Certificado não encontrado.'],
+    [403, 'Você não tem permissão para revogar este certificado.'],
+    [400, 'Este certificado já se encontra revogado.'],
+    [500, 'Não foi possível concluir a operação agora. Tente novamente em instantes.'],
+  ])('converte erro HTTP %i em ApiError', async (status, mensagem) => {
+    const idMock = status === 500 ? 500 : status
+    await expect(revogarCertificado(idMock)).rejects.toMatchObject({
+      name: 'ApiError',
+      kind: 'http',
+      status,
+      mensagem,
+    })
+  })
+
+  it('converte resposta de sucesso incompatível em erro de contrato', async () => {
+    server.use(http.post('*/api/certificados/:certificadoId/revogar', () =>
+      HttpResponse.json({ sucesso: 'sim' }),
+    ))
+    await expect(revogarCertificado(123)).rejects.toMatchObject({ kind: 'contrato' })
+  })
+
+  it('classifica falha de rede e cancelamento como indisponibilidade', async () => {
+    server.use(http.post('*/api/certificados/:certificadoId/revogar', () => HttpResponse.error()))
+    await expect(revogarCertificado(123)).rejects.toMatchObject({ kind: 'rede' })
+
+    const controller = new AbortController()
+    const pendente = revogarCertificado(123, controller.signal)
+    controller.abort()
+    await expect(pendente).rejects.toMatchObject({ kind: 'timeout' })
+  })
+
+  it('altera o mock para INVALIDO após sucesso, visível na próxima listagem', async () => {
+    await revogarCertificado(1)
+    const certificados = await listarCertificados('emissor-uuid-1')
+    expect(certificados.find((certificado) => certificado.certificadoId === '1')?.status).toBe('invalido')
   })
 })
