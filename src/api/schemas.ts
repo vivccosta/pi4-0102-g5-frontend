@@ -56,3 +56,17 @@ export const CertificadoResumoSchema = z.object({
 })
 export const ListarCertificadosResponseSchema = z.array(CertificadoResumoSchema)
 export type CertificadoResumo = z.infer<typeof CertificadoResumoSchema>
+
+export const EmissorPendenteSchema = z.object({
+  emissorId: z.string().min(1),
+  nome: z.string(),
+  email: z.string(),
+  cnpjCpf: z.string(),
+  status: z.string(),
+  // TODO(contrato): CT17 solicita documentação, mas o DTO atual não envia esse campo.
+  documentacao: z.union([z.string(), z.array(z.string())]).optional(),
+})
+export const ListarEmissoresPendentesResponseSchema = z.array(EmissorPendenteSchema)
+export type EmissorPendente = z.infer<typeof EmissorPendenteSchema>
+
+export const AtivarEmissorResponseSchema = z.string()

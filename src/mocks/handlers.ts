@@ -19,6 +19,17 @@ const certificadosMock = [
   },
 ]
 
+const emissoresPendentesIniciais = [
+  { emissorId: 'emissor-pendente-1', nome: 'Instituto Aurora', email: 'contato@aurora.timbro.test', cnpjCpf: '12345678000195', status: 'PENDENTE' },
+  { emissorId: 'emissor-pendente-2', nome: 'Marina Exemplo', email: 'marina@timbro.test', cnpjCpf: '12345678901', status: 'PENDENTE' },
+  { emissorId: 'emissor-pendente-3', nome: 'Centro Horizonte', email: 'secretaria@horizonte.timbro.test', cnpjCpf: 'Documento 123', status: 'PENDENTE' },
+]
+let emissoresPendentesMock = emissoresPendentesIniciais.map((emissor) => ({ ...emissor }))
+
+export function resetMockEmissores(): void {
+  emissoresPendentesMock = emissoresPendentesIniciais.map((emissor) => ({ ...emissor }))
+}
+
 export function resetMockCertificados(): void {
   certificadosMock.forEach((certificado, index) => {
     certificado.status = index === 0 ? 'VALIDO' : 'INVALIDO'
@@ -29,6 +40,31 @@ export function resetMockCertificados(): void {
  * Handlers do MSW para simulação dos contratos do Backend 1.
  */
 export const handlers: HttpHandler[] = [
+  http.get('*/api/admin/emissores/pendentes', ({ request }) => {
+    const authorization = request.headers.get('Authorization')
+    if (!authorization) return new HttpResponse(null, { status: 403 })
+    if (authorization === 'Bearer token-401') return erroEnvelope(401, 'Sua sessão expirou. Entre novamente.')
+    if (authorization === 'Bearer token-403') return erroEnvelope(403, 'Acesso negado.')
+    if (authorization === 'Bearer token-500') return erroEnvelope(500, 'Falha interna.')
+    if (authorization === 'Bearer token-vazio') return HttpResponse.json([])
+    return HttpResponse.json(emissoresPendentesMock.map((emissor) => ({ ...emissor })))
+  }),
+  http.put('*/api/admin/emissores/:emissorId/status', async ({ request, params }) => {
+    const authorization = request.headers.get('Authorization')
+    if (!authorization) return new HttpResponse(null, { status: 403 })
+    if (authorization === 'Bearer token-401') return erroEnvelope(401, 'Sua sessão expirou. Entre novamente.')
+    if (authorization === 'Bearer token-403') return erroEnvelope(403, 'Acesso negado.')
+    const emissorId = String(params.emissorId)
+    if (emissorId === '404') return erroEnvelope(404, 'Emissor não encontrado.')
+    if (emissorId === '400') return erroEnvelope(400, 'Status inválido.')
+    if (emissorId === '500') return erroEnvelope(500, 'Falha interna.')
+    const body: unknown = await request.json().catch(() => null)
+    if (!body || typeof body !== 'object' || (body as Record<string, unknown>).novoStatus !== 'ATIVO') {
+      return erroEnvelope(400, 'Status inválido.')
+    }
+    emissoresPendentesMock = emissoresPendentesMock.filter((emissor) => emissor.emissorId !== emissorId)
+    return new HttpResponse('Emissor ativado.', { status: 200, headers: { 'Content-Type': 'text/plain' } })
+  }),
   // CT15: histórico de certificados autenticado do emissor.
   http.get('*/api/emissores/:emissorId/certificados', ({ request, params }) => {
     const authorization = request.headers.get('Authorization')
