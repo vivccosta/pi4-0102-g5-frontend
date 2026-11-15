@@ -13,6 +13,7 @@ describe('CopyButton', () => {
     render(<CopyButton value="chave-completa" />)
     await user.click(screen.getByRole('button', { name: 'Copiar' }))
     expect(copyToClipboard).toHaveBeenCalledWith('chave-completa')
-    expect(await screen.findByText('Copiado!')).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: 'Copiado!' })).toBeInTheDocument()
+    expect(screen.getByText('Copiado!', { selector: '[aria-live]' })).toBeInTheDocument()
   })
 })

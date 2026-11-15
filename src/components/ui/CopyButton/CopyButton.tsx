@@ -12,7 +12,7 @@ export function CopyButton({ value }: CopyButtonProps) {
     if (success) window.setTimeout(() => setCopied(false), 2000)
   }
   return <span>
-    <Button type="button" variant="secondary" size="sm" onClick={copy}>Copiar</Button>
+    <Button type="button" variant="secondary" size="sm" onClick={copy}>{copied ? 'Copiado!' : 'Copiar'}</Button>
     <span aria-live="polite" className="sr-only">{copied ? 'Copiado!' : ''}</span>
   </span>
 }
