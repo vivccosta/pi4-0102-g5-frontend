@@ -14,9 +14,7 @@ describe('Roteamento da aplicação', () => {
     expect(
       screen.getByRole('heading', { level: 1, name: 'Verificar certificado' }),
     ).toBeInTheDocument()
-    expect(
-      screen.getByText('Verificar certificado — em construção'),
-    ).toBeInTheDocument()
+    expect(screen.getByRole('textbox', { name: 'Chave de autenticação' })).toBeInTheDocument()
   })
 
   it('renderiza "/verificar"', () => {
