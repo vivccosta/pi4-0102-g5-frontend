@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { MemoryRouter, Route, Routes } from 'react-router'
@@ -114,4 +114,136 @@ describe('PainelPage', () => {
       'Acesso negado. Você só pode visualizar o seu próprio histórico.',
     )
   })
+
+  it('não chama a API ao cancelar ou fechar a confirmação com Escape', async () => {
+    const user = userEvent.setup()
+    let chamadas = 0
+    server.use(http.post('*/api/certificados/:certificadoId/revogar', () => {
+      chamadas += 1
+      return HttpResponse.json({ sucesso: true, mensagem: 'ok' })
+    }))
+    renderPainel()
+
+    const botaoOrigem = await screen.findByRole('button', { name: 'Revogar' })
+    await user.click(botaoOrigem)
+    expect(screen.getByRole('dialog', { name: 'Revogar certificado?' })).toHaveTextContent(
+      'Você está revogando o certificado de Ana Exemplo. Depois disso ele passará a ser exibido como inválido em todas as consultas. Esta ação não pode ser desfeita.',
+    )
+    await user.click(screen.getByRole('button', { name: 'Cancelar' }))
+    expect(botaoOrigem).toHaveFocus()
+
+    await user.click(botaoOrigem)
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(botaoOrigem).toHaveFocus()
+    expect(chamadas).toBe(0)
+  })
+
+  it('chama uma vez ao confirmar e só atualiza a situação após a resposta', async () => {
+    const user = userEvent.setup()
+    const certificado = {
+      certificadoId: '1',
+      nomeAluno: 'Ana Exemplo',
+      hash: '0x7f83a1c4d2e6b809',
+      dataEmissao: '2026-10-14T09:30:00',
+      status: 'VALIDO',
+      curso: 'Sistemas de Informação',
+    }
+    let chamadas = 0
+    let sinalizarInicio: (() => void) | undefined
+    let liberarResposta: (() => void) | undefined
+    const iniciou = new Promise<void>((resolve) => { sinalizarInicio = resolve })
+    const respostaLiberada = new Promise<void>((resolve) => { liberarResposta = resolve })
+    server.use(
+      http.get('*/api/emissores/:emissorId/certificados', () => HttpResponse.json([{ ...certificado }])),
+      http.post('*/api/certificados/:certificadoId/revogar', async () => {
+        chamadas += 1
+        sinalizarInicio?.()
+        await respostaLiberada
+        certificado.status = 'INVALIDO'
+        return HttpResponse.json({ sucesso: true, mensagem: 'Certificado revogado com sucesso.' })
+      }),
+    )
+    renderPainel()
+
+    await user.click(await screen.findByRole('button', { name: 'Revogar' }))
+    const confirmar = screen.getByRole('button', { name: 'Revogar certificado' })
+    await user.dblClick(confirmar)
+    await iniciou
+    expect(chamadas).toBe(1)
+    expect(screen.getByText('Válido')).toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent('Revogando…')
+    expect(screen.getByRole('button', { name: /Revogando/ })).toBeDisabled()
+
+    liberarResposta?.()
+    expect(await screen.findByText('Certificado revogado com sucesso.')).toBeInTheDocument()
+    expect(await screen.findByText('Revogado')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Revogar' })).not.toBeInTheDocument()
+  })
+
+  it.each([
+    {
+      label: '403', id: '403', status: 403,
+      backendMessage: 'Você não tem permissão para revogar este certificado.',
+      feedback: 'Você não tem permissão para revogar este certificado.', keepOpen: true,
+    },
+    {
+      label: '404', id: '404', status: 404,
+      backendMessage: 'Certificado não encontrado.',
+      feedback: 'Certificado não encontrado.', keepOpen: true,
+    },
+    {
+      label: '500', id: '500', status: 500,
+      backendMessage: 'Falha na comunicação com a blockchain.',
+      feedback: 'Não foi possível concluir a operação agora. Tente novamente em instantes.', keepOpen: true,
+    },
+    {
+      label: 'rede', id: 'rede', network: true,
+      feedback: 'Não foi possível concluir a operação agora. Tente novamente em instantes.', keepOpen: true,
+    },
+    {
+      label: '400 já revogado', id: '400', status: 400,
+      backendMessage: 'Este certificado já se encontra revogado.',
+      feedback: 'Este certificado já estava revogado.', keepOpen: false,
+    },
+  ])('exibe o feedback correto para erro $label', async (scenario) => {
+    const user = userEvent.setup()
+    const certificado = {
+      certificadoId: scenario.id,
+      nomeAluno: 'Ana Exemplo',
+      hash: '0x7f83a1c4d2e6b809',
+      dataEmissao: '2026-10-14T09:30:00',
+      status: 'VALIDO',
+      curso: 'Sistemas de Informação',
+    }
+    server.use(
+      http.get('*/api/emissores/:emissorId/certificados', () => HttpResponse.json([{ ...certificado }])),
+      http.post('*/api/certificados/:certificadoId/revogar', () => {
+        if (scenario.id === '400') certificado.status = 'INVALIDO'
+        if (scenario.network) return HttpResponse.error()
+        return HttpResponse.json(
+          { status: scenario.status, mensagem: scenario.backendMessage },
+          { status: scenario.status },
+        )
+      }),
+    )
+    renderPainel()
+
+    await user.click(await screen.findByRole('button', { name: 'Revogar' }))
+    await user.click(screen.getByRole('button', { name: 'Revogar certificado' }))
+
+    if (scenario.keepOpen) {
+      expect(await screen.findByRole('alert')).toHaveTextContent(scenario.feedback)
+      expect(screen.getByRole('dialog')).toBeInTheDocument()
+      expect(screen.getByText('Válido')).toBeInTheDocument()
+      await user.click(screen.getByRole('button', { name: 'Cancelar' }))
+      expect(screen.getByRole('button', { name: 'Revogar' })).toHaveFocus()
+    } else {
+      expect(await screen.findByText(scenario.feedback)).toBeInTheDocument()
+      await waitFor(() => expect(screen.getByText('Revogado')).toHaveFocus())
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'Revogar' })).not.toBeInTheDocument()
+    }
+  })
+
 })
