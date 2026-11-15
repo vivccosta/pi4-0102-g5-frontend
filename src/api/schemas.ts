@@ -35,3 +35,18 @@ export const RegistrarCertificadoResponseSchema = z.object({
   hash: z.string().trim().min(1),
 })
 export type RegistrarCertificadoResponse = z.infer<typeof RegistrarCertificadoResponseSchema>
+
+export const CertificadoResumoSchema = z.object({
+  certificadoId: z.string().min(1),
+  nomeAluno: z.string(),
+  hash: z.string().transform((value) => value.trim().replace(/[\s\r\n]+/g, '')).pipe(z.string().min(1)),
+  dataEmissao: z.string(),
+  status: z.preprocess(
+    (value) => (typeof value === 'string' ? value.toUpperCase() : value),
+    z.enum(['VALIDO', 'INVALIDO']),
+  ).transform((value) => value === 'VALIDO' ? 'valido' as const : 'invalido' as const),
+  // TODO(contrato): CT15/card exige curso, mas o DTO atual do Backend 1 ainda não o devolve.
+  curso: z.string().optional(),
+})
+export const ListarCertificadosResponseSchema = z.array(CertificadoResumoSchema)
+export type CertificadoResumo = z.infer<typeof CertificadoResumoSchema>

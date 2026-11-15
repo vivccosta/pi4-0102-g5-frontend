@@ -1,5 +1,22 @@
 import { request } from './http'
-import { RegistrarCertificadoResponseSchema, type RegistrarCertificadoResponse } from './schemas'
+import {
+  ListarCertificadosResponseSchema,
+  RegistrarCertificadoResponseSchema,
+  type RegistrarCertificadoResponse,
+  type CertificadoResumo,
+} from './schemas'
+
+export async function listarCertificados(
+  emissorId: string,
+  signal?: AbortSignal,
+): Promise<CertificadoResumo[]> {
+  return request<CertificadoResumo[]>(`/api/emissores/${encodeURIComponent(emissorId)}/certificados`, {
+    method: 'GET',
+    auth: 'required',
+    signal,
+    schema: ListarCertificadosResponseSchema,
+  })
+}
 
 export interface RegistroCertificadoPayload {
   nomeAluno: string
