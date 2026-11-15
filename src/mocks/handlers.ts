@@ -220,4 +220,29 @@ export const handlers: HttpHandler[] = [
       'Acesso não autorizado. Apenas emissores cadastrados podem acessar esta área.',
     )
   }),
+  // Cadastro público de emissor. A senha e os dados informados não são persistidos no mock.
+  http.post('*/api/emissores/cadastrar', async ({ request }) => {
+    let body: unknown
+    try {
+      body = await request.json()
+    } catch {
+      return erroEnvelope(400, 'Dados do cadastro inválidos.')
+    }
+    if (!body || typeof body !== 'object') return erroEnvelope(400, 'Dados do cadastro inválidos.')
+    const dados = body as Record<string, unknown>
+    if (typeof dados.email === 'string' && dados.email.toLowerCase() === 'cadastrado@timbro.test') {
+      return erroEnvelope(400, 'Email já cadastrado.')
+    }
+    if (
+      typeof dados.nome !== 'string' || !dados.nome.trim() ||
+      typeof dados.email !== 'string' || !dados.email.includes('@') ||
+      typeof dados.cnpjCpf !== 'string' || !/^\d{11}$|^\d{14}$/.test(dados.cnpjCpf) ||
+      typeof dados.senha !== 'string' || dados.senha.length < 8
+    ) return erroEnvelope(400, 'Dados do cadastro inválidos.')
+    if (dados.email === 'erro500@timbro.test') return erroEnvelope(500, 'Falha interna.')
+    return new HttpResponse(
+      'Cadastro realizado com sucesso. Aguardando aprovação do administrador.',
+      { status: 201, headers: { 'Content-Type': 'text/plain' } },
+    )
+  }),
 ]
