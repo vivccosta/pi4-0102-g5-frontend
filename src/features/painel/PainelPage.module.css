@@ -116,6 +116,22 @@
   font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
 }
 
+.revokeButton {
+  color: var(--color-error-text);
+  border-color: var(--color-error-border);
+}
+
+.revokeButton:hover:not(:disabled) {
+  background: var(--color-error-bg);
+  border-color: var(--color-error-text);
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+}
+
 @media (max-width: 600px) {
   .heading {
     align-items: flex-start;
