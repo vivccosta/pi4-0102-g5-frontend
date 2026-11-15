@@ -19,6 +19,20 @@ export const LoginResponseSchema = z.object({
 })
 export type LoginResponse = z.infer<typeof LoginResponseSchema>
 
+export const CadastrarEmissorRequestSchema = z.object({
+  nome: z.string().trim().min(1, 'O nome do emissor é obrigatório'),
+  email: z.string().trim().min(1, 'O e-mail é obrigatório').email('E-mail inválido'),
+  cnpjCpf: z.string().regex(/^(\d{11}|\d{14})$/, 'Informe um CPF ou CNPJ válido'),
+  // TODO(contrato): confirmar com o grupo se a senha deve ter mínimo de 8 caracteres.
+  senha: z.string().min(8, 'A senha deve ter pelo menos 8 caracteres'),
+})
+export type CadastrarEmissorRequest = z.infer<typeof CadastrarEmissorRequestSchema>
+
+export const CadastrarEmissorResponseSchema = z.literal(
+  'Cadastro realizado com sucesso. Aguardando aprovação do administrador.',
+)
+export type CadastrarEmissorResponse = z.infer<typeof CadastrarEmissorResponseSchema>
+
 export const ValidarCertificadoResponseSchema = z.object({
   valido: z.boolean(),
   mensagem: z.string(),
