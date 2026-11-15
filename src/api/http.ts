@@ -15,6 +15,7 @@ export interface RequestOptions<TResponse = unknown> {
   timeoutMs?: number
   schema?: z.ZodType<TResponse>
   signal?: AbortSignal
+  acceptedStatuses?: number[]
 }
 
 type UnauthorizedHandler = () => void
@@ -59,6 +60,7 @@ export async function request<TResponse = unknown>(
     timeoutMs = TIMEOUT_PADRAO_MS,
     schema,
     signal: externalSignal,
+    acceptedStatuses = [],
   } = options
 
   const config = getConfig()
@@ -125,7 +127,7 @@ export async function request<TResponse = unknown>(
   }
 
   // Tratamento de respostas 4xx e 5xx
-  if (!response.ok) {
+  if (!response.ok && !acceptedStatuses.includes(response.status)) {
     let mensagemBackend: string | undefined
     try {
       const errorJson = (await response.json()) as BackendErrorEnvelope

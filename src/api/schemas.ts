@@ -18,3 +18,13 @@ export const LoginResponseSchema = z.object({
   ),
 })
 export type LoginResponse = z.infer<typeof LoginResponseSchema>
+
+export const ValidarCertificadoResponseSchema = z.object({
+  valido: z.boolean(),
+  mensagem: z.string(),
+  nomeAluno: z.string().optional(),
+  curso: z.string().optional(),
+  dataConclusao: z.string().optional(),
+  hash: z.string().optional(),
+})
+export type ValidarCertificadoResponse = z.infer<typeof ValidarCertificadoResponseSchema>
