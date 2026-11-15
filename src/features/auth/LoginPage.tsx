@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Navigate, useLocation, useNavigate } from 'react-router'
+import { Link, Navigate, useLocation, useNavigate } from 'react-router'
 import { autenticarEmissor } from '@/api/auth'
 import { ApiError, MENSAGEM_ERRO_GENERICA } from '@/api/errors'
 import { LoginRequestSchema, type LoginRequest } from '@/api/schemas'
@@ -132,6 +132,7 @@ export function LoginPage() {
             </Button>
           </div>
         </form>
+        <p className={styles.subtitle}><Link to="/emissor/cadastro">Solicitar cadastro</Link></p>
       </section>
     </div>
   )
