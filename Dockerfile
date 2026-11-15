@@ -20,6 +20,11 @@ RUN rm -rf /usr/share/nginx/html/*
 # Copia a configuração do Nginx com porta 3000 e regras de cache/SPA
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
+# Copia o script de runtime para os hooks do entrypoint oficial do Nginx
+COPY docker/40-generate-config.sh /docker-entrypoint.d/40-generate-config.sh
+RUN sed -i 's/\r$//' /docker-entrypoint.d/40-generate-config.sh && \
+    chmod +x /docker-entrypoint.d/40-generate-config.sh
+
 # Copia o bundle gerado no estágio de build
 COPY --from=builder /app/dist /usr/share/nginx/html
 
