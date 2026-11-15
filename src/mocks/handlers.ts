@@ -1,5 +1,29 @@
-import { http, HttpResponse, type HttpHandler } from 'msw'
+import { delay, http, HttpResponse, type HttpHandler } from 'msw'
 import { erroEnvelope, gerarMockJwt } from './helpers'
+
+const certificadosMock = [
+  {
+    certificadoId: '1',
+    nomeAluno: 'Ana Exemplo',
+    hash: '0x7f83a1c4d2e6b809',
+    dataEmissao: '2026-10-14T09:30:00',
+    status: 'VALIDO',
+    curso: 'Sistemas de Informação',
+  },
+  {
+    certificadoId: '2',
+    nomeAluno: 'Bruno Exemplo',
+    hash: '0xabcd1234ef567890',
+    dataEmissao: '2026-10-15T12:45:00.123456',
+    status: 'INVALIDO',
+  },
+]
+
+export function resetMockCertificados(): void {
+  certificadosMock.forEach((certificado, index) => {
+    certificado.status = index === 0 ? 'VALIDO' : 'INVALIDO'
+  })
+}
 
 /**
  * Handlers do MSW para simulação dos contratos do Backend 1.
@@ -20,23 +44,30 @@ export const handlers: HttpHandler[] = [
     }
     if (params.emissorId === 'emissor-vazio') return HttpResponse.json([])
 
-    return HttpResponse.json([
-      {
-        certificadoId: 'certificado-1',
-        nomeAluno: 'Ana Exemplo',
-        hash: '0x7f83a1c4d2e6b809',
-        dataEmissao: '2026-10-14T09:30:00',
-        status: 'VALIDO',
-        curso: 'Sistemas de Informação',
-      },
-      {
-        certificadoId: 'certificado-2',
-        nomeAluno: 'Bruno Exemplo',
-        hash: '0xabcd1234ef567890',
-        dataEmissao: '2026-10-15T12:45:00.123456',
-        status: 'INVALIDO',
-      },
-    ])
+    return HttpResponse.json(certificadosMock.map((certificado) => ({ ...certificado })))
+  }),
+  // CT19: revogação autenticada do certificado pelo emissor dono.
+  http.post('*/api/certificados/:certificadoId/revogar', async ({ request, params }) => {
+    const authorization = request.headers.get('Authorization')
+    if (!authorization) return new HttpResponse(null, { status: 403 })
+    if (authorization === 'Bearer token-401') {
+      return erroEnvelope(401, 'Sua sessão expirou. Entre novamente.')
+    }
+    if (authorization === 'Bearer token-403') {
+      return erroEnvelope(403, 'Você não tem permissão para revogar este certificado.')
+    }
+
+    const certificadoId = String(params.certificadoId)
+    if (certificadoId === '404') return erroEnvelope(404, 'Certificado não encontrado.')
+    if (certificadoId === '403') return erroEnvelope(403, 'Você não tem permissão para revogar este certificado.')
+    if (certificadoId === '400') return erroEnvelope(400, 'Este certificado já se encontra revogado.')
+    if (certificadoId === '500') return erroEnvelope(500, 'Falha na comunicação com a blockchain.')
+    if (certificadoId === '21') await delay(21_000)
+
+    const certificado = certificadosMock.find((item) => item.certificadoId === certificadoId)
+    if (!certificado) return erroEnvelope(404, 'Certificado não encontrado.')
+    certificado.status = 'INVALIDO'
+    return HttpResponse.json({ sucesso: true, mensagem: 'Certificado revogado com sucesso.' })
   }),
   // CT4/CT8: registro autenticado de certificado.
   http.post('*/api/certificados/registrar', async ({ request }) => {

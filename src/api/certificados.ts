@@ -4,6 +4,8 @@ import {
   RegistrarCertificadoResponseSchema,
   type RegistrarCertificadoResponse,
   type CertificadoResumo,
+  RevogarCertificadoResponseSchema,
+  type RevogarCertificadoResponse,
 } from './schemas'
 
 export async function listarCertificados(
@@ -37,4 +39,19 @@ export async function registrarCertificado(
     signal,
     schema: RegistrarCertificadoResponseSchema,
   })
+}
+
+export async function revogarCertificado(
+  certificadoId: number,
+  signal?: AbortSignal,
+): Promise<RevogarCertificadoResponse> {
+  return request<RevogarCertificadoResponse>(
+    `/api/certificados/${encodeURIComponent(certificadoId)}/revogar`,
+    {
+      method: 'POST',
+      auth: 'required',
+      signal,
+      schema: RevogarCertificadoResponseSchema,
+    },
+  )
 }
