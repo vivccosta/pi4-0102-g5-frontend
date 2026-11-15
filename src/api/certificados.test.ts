@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { http, HttpResponse } from 'msw'
-import { registrarCertificado } from './certificados'
+import { listarCertificados, registrarCertificado } from './certificados'
 import { server } from '@/mocks/server'
 import { saveSession } from '@/lib/session'
 
@@ -57,5 +57,65 @@ describe('registrarCertificado', () => {
       saveSession({ token: 'token-403', nome: 'Emissor', perfil: 'EMISSOR', exp: Math.floor(Date.now() / 1000) + 3600 })
     }
     await expect(registrarCertificado(dados)).rejects.toMatchObject({ kind: 'http', status, mensagem })
+  })
+})
+
+describe('listarCertificados', () => {
+  it('usa o emissorId na URL e normaliza status e chave na borda da API', async () => {
+    let urlRecebida = ''
+    let authorization: string | null = null
+    server.use(http.get('*/api/emissores/:emissorId/certificados', ({ request }) => {
+      urlRecebida = request.url
+      authorization = request.headers.get('Authorization')
+      return HttpResponse.json([{
+        certificadoId: 'certificado 1',
+        nomeAluno: 'Ana Exemplo',
+        hash: '  chave\n de teste  ',
+        dataEmissao: '2026-10-14T09:30:00',
+        status: 'valido',
+      }])
+    }))
+
+    const resultado = await listarCertificados('emissor da PUC')
+    expect(urlRecebida).toBe('http://localhost:8080/api/emissores/emissor%20da%20PUC/certificados')
+    expect(authorization).toBe('Bearer token-teste')
+    expect(resultado).toEqual([{
+      certificadoId: 'certificado 1',
+      nomeAluno: 'Ana Exemplo',
+      hash: 'chavedeteste',
+      dataEmissao: '2026-10-14T09:30:00',
+      status: 'valido',
+    }])
+  })
+
+  it('valida lista vazia e certificado com curso ausente', async () => {
+    expect(await listarCertificados('emissor-vazio')).toEqual([])
+    const certificados = await listarCertificados('emissor-uuid-1')
+    expect(certificados[1]?.curso).toBeUndefined()
+    expect(certificados[1]?.status).toBe('invalido')
+  })
+
+  it('envia Bearer e usa os erros de negócio e indisponibilidade do contrato', async () => {
+    saveSession({ token: 'token-403', nome: 'Emissor', perfil: 'EMISSOR', emissorId: 'emissor-1', exp: Math.floor(Date.now() / 1000) + 3600 })
+    await expect(listarCertificados('emissor-1')).rejects.toMatchObject({
+      kind: 'http', status: 403,
+      mensagem: 'Acesso negado. Você só pode visualizar o seu próprio histórico.',
+    })
+    saveSession({ token: 'token-500', nome: 'Emissor', perfil: 'EMISSOR', emissorId: 'emissor-1', exp: Math.floor(Date.now() / 1000) + 3600 })
+    await expect(listarCertificados('emissor-1')).rejects.toMatchObject({
+      kind: 'http', status: 500,
+      mensagem: 'Não foi possível concluir a operação agora. Tente novamente em instantes.',
+    })
+  })
+
+  it('não envia Authorization quando não há sessão', async () => {
+    let authorization: string | null = 'nao-consultado'
+    server.use(http.get('*/api/emissores/:emissorId/certificados', ({ request }) => {
+      authorization = request.headers.get('Authorization')
+      return new HttpResponse(null, { status: 403 })
+    }))
+    sessionStorage.clear()
+    await expect(listarCertificados('emissor-1')).rejects.toMatchObject({ status: 403 })
+    expect(authorization).toBeNull()
   })
 })

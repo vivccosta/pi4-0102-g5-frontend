@@ -5,6 +5,39 @@ import { erroEnvelope, gerarMockJwt } from './helpers'
  * Handlers do MSW para simulação dos contratos do Backend 1.
  */
 export const handlers: HttpHandler[] = [
+  // CT15: histórico de certificados autenticado do emissor.
+  http.get('*/api/emissores/:emissorId/certificados', ({ request, params }) => {
+    const authorization = request.headers.get('Authorization')
+    if (!authorization) return new HttpResponse(null, { status: 403 })
+    if (authorization === 'Bearer token-401') {
+      return erroEnvelope(401, 'Sua sessão expirou. Entre novamente.')
+    }
+    if (authorization === 'Bearer token-403') {
+      return erroEnvelope(403, 'Acesso negado. Você só pode visualizar o seu próprio histórico.')
+    }
+    if (authorization === 'Bearer token-500' || params.emissorId === 'emissor-erro-500') {
+      return erroEnvelope(500, 'Falha interna.')
+    }
+    if (params.emissorId === 'emissor-vazio') return HttpResponse.json([])
+
+    return HttpResponse.json([
+      {
+        certificadoId: 'certificado-1',
+        nomeAluno: 'Ana Exemplo',
+        hash: '0x7f83a1c4d2e6b809',
+        dataEmissao: '2026-10-14T09:30:00',
+        status: 'VALIDO',
+        curso: 'Sistemas de Informação',
+      },
+      {
+        certificadoId: 'certificado-2',
+        nomeAluno: 'Bruno Exemplo',
+        hash: '0xabcd1234ef567890',
+        dataEmissao: '2026-10-15T12:45:00.123456',
+        status: 'INVALIDO',
+      },
+    ])
+  }),
   // CT4/CT8: registro autenticado de certificado.
   http.post('*/api/certificados/registrar', async ({ request }) => {
     const authorization = request.headers.get('Authorization')
