@@ -24,16 +24,16 @@ function renderLogin({
   }
 
   return render(
-    <AuthProvider>
-      <MemoryRouter initialEntries={initialEntries}>
+    <MemoryRouter initialEntries={initialEntries}>
+      <AuthProvider>
         <Routes>
           <Route path="/emissor/login" element={<LoginPage />} />
           <Route path="/emissor/painel" element={<div>Página do Painel</div>} />
           <Route path="/emissor/registrar" element={<div>Página de Registro</div>} />
           <Route path="/admin/emissores" element={<div>Página Admin</div>} />
         </Routes>
-      </MemoryRouter>
-    </AuthProvider>,
+      </AuthProvider>
+    </MemoryRouter>,
   )
 }
 

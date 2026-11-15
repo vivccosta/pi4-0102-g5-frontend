@@ -1,5 +1,6 @@
 import { act, render, renderHook, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { MemoryRouter } from 'react-router'
 import { queryClient } from '@/app/queryClient'
 import { gerarMockJwt } from '@/mocks/helpers'
 import { AuthProvider } from './AuthProvider'
@@ -29,7 +30,7 @@ describe('AuthContext e useAuth', () => {
 
   it('inicia com sessão nula e isAuthenticated false quando sessionStorage está vazio', () => {
     const { result } = renderHook(() => useAuth(), {
-      wrapper: ({ children }) => <AuthProvider>{children}</AuthProvider>,
+      wrapper: ({ children }) => <MemoryRouter><AuthProvider>{children}</AuthProvider></MemoryRouter>,
     })
 
     expect(result.current.session).toBeNull()
@@ -50,7 +51,7 @@ describe('AuthContext e useAuth', () => {
     )
 
     const { result } = renderHook(() => useAuth(), {
-      wrapper: ({ children }) => <AuthProvider>{children}</AuthProvider>,
+      wrapper: ({ children }) => <MemoryRouter><AuthProvider>{children}</AuthProvider></MemoryRouter>,
     })
 
     expect(result.current.session).not.toBeNull()
@@ -70,7 +71,7 @@ describe('AuthContext e useAuth', () => {
     })
 
     const { result } = renderHook(() => useAuth(), {
-      wrapper: ({ children }) => <AuthProvider>{children}</AuthProvider>,
+      wrapper: ({ children }) => <MemoryRouter><AuthProvider>{children}</AuthProvider></MemoryRouter>,
     })
 
     act(() => {
@@ -103,7 +104,7 @@ describe('AuthContext e useAuth', () => {
     })
 
     const { result } = renderHook(() => useAuth(), {
-      wrapper: ({ children }) => <AuthProvider>{children}</AuthProvider>,
+      wrapper: ({ children }) => <MemoryRouter><AuthProvider>{children}</AuthProvider></MemoryRouter>,
     })
 
     act(() => {
@@ -138,7 +139,7 @@ describe('AuthContext e useAuth', () => {
     })
 
     const { result } = renderHook(() => useAuth(), {
-      wrapper: ({ children }) => <AuthProvider>{children}</AuthProvider>,
+      wrapper: ({ children }) => <MemoryRouter><AuthProvider>{children}</AuthProvider></MemoryRouter>,
     })
 
     act(() => {
@@ -168,9 +169,11 @@ describe('AuthContext e useAuth', () => {
 
   it('renderiza os filhos corretamente no AuthProvider', () => {
     render(
-      <AuthProvider>
-        <div>Filho de Teste</div>
-      </AuthProvider>,
+      <MemoryRouter>
+        <AuthProvider>
+          <div>Filho de Teste</div>
+        </AuthProvider>
+      </MemoryRouter>,
     )
 
     expect(screen.getByText('Filho de Teste')).toBeInTheDocument()
