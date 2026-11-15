@@ -58,6 +58,30 @@ describe('request (http client)', () => {
     )
   })
 
+  it('não inclui token Bearer quando token na sessão está expirado (exp em segundos no passado)', async () => {
+    sessionStorage.setItem(
+      'timbro.sessao',
+      JSON.stringify({
+        token: 'token-expirado',
+        nome: 'Emissor Expirado',
+        perfil: 'EMISSOR',
+        exp: Math.floor(Date.now() / 1000) - 60, // expirado há 1 minuto
+      }),
+    )
+
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    )
+
+    await request('/api/protegida', { auth: 'required' })
+    const calledHeaders = fetchSpy.mock.calls[0]?.[1]?.headers as Record<string, string>
+    expect(calledHeaders['Authorization']).toBeUndefined()
+    expect(sessionStorage.getItem('timbro.sessao')).toBeNull()
+  })
+
   it('não envia Authorization quando auth: none', async () => {
     sessionStorage.setItem(
       'timbro.sessao',
