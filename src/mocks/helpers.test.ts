@@ -1,6 +1,7 @@
 import { http } from 'msw'
 import { describe, expect, it } from 'vitest'
-import { erroEnvelope } from './helpers'
+import { decodeJwtPayload } from '../lib/jwt'
+import { base64UrlEncode, erroEnvelope, gerarMockJwt } from './helpers'
 import { server } from './server'
 
 describe('MSW infraestrutura e helpers', () => {
@@ -26,5 +27,31 @@ describe('MSW infraestrutura e helpers', () => {
     expect(res.status).toBe(404)
     const data = await res.json()
     expect(data).toEqual({ status: 404, mensagem: 'Não encontrado' })
+  })
+
+  it('gerarMockJwt cria JWT válido com expiração em segundos e suporte a UTF-8', () => {
+    const agora = Math.floor(Date.now() / 1000)
+    const token = gerarMockJwt({
+      sub: 'usuario@timbro.test',
+      id: 'usr-123',
+      perfil: 'EMISSOR',
+      nome: 'José Validação e Acentuação',
+      exp: agora + 3600,
+    })
+
+    const decoded = decodeJwtPayload(token)
+    expect(decoded).not.toBeNull()
+    expect(decoded?.sub).toBe('usuario@timbro.test')
+    expect(decoded?.id).toBe('usr-123')
+    expect(decoded?.perfil).toBe('EMISSOR')
+    expect(decoded?.exp).toBe(agora + 3600)
+    expect(token.split('.')).toHaveLength(3)
+  })
+
+  it('base64UrlEncode codifica caracteres sem gerar padding inválido para URL', () => {
+    const encoded = base64UrlEncode('{"teste":"olá mundo"}')
+    expect(encoded).not.toContain('+')
+    expect(encoded).not.toContain('/')
+    expect(encoded).not.toContain('=')
   })
 })
