@@ -128,8 +128,14 @@
 
 .modalActions {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
   gap: var(--space-3);
+}
+
+.pendingStatus {
+  margin-right: auto;
+  color: var(--color-text-muted);
 }
 
 @media (max-width: 600px) {

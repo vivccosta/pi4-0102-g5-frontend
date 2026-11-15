@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { ApiError, MENSAGEM_ERRO_GENERICA } from '@/api/errors'
 import { Alert } from '@/components/ui/Alert'
@@ -10,6 +10,8 @@ import { formatarDataEmissao } from '@/lib/datas'
 import { useCertificados } from './useCertificados'
 import { useRevogarCertificado } from './useRevogarCertificado'
 import styles from './PainelPage.module.css'
+
+const MENSAGEM_CERTIFICADO_JA_REVOGADO = 'Este certificado já se encontra revogado.'
 
 function abreviarChave(chave: string): string {
   if (chave.length <= 14) return chave
@@ -23,10 +25,17 @@ export function PainelPage() {
   const [certificadoSelecionado, setCertificadoSelecionado] = useState<{ id: string; nomeAluno: string } | null>(null)
   const [mensagemSucesso, setMensagemSucesso] = useState('')
   const [erroRevogacao, setErroRevogacao] = useState('')
+  const [statusComFoco, setStatusComFoco] = useState<string | null>(null)
   const confirmacaoEmAndamento = useRef(false)
+  const statusFocusRef = useRef<HTMLSpanElement>(null)
   const certificados = [...(certificadosQuery.data ?? [])].sort((a, b) =>
     b.dataEmissao.localeCompare(a.dataEmissao),
   )
+
+  useEffect(() => {
+    if (!statusComFoco) return
+    statusFocusRef.current?.focus()
+  }, [statusComFoco, certificadosQuery.data, mensagemSucesso])
 
   function irParaRegistro() {
     navigate('/emissor/registrar')
@@ -35,6 +44,7 @@ export function PainelPage() {
   function abrirConfirmacao(certificadoId: string, nomeAluno: string) {
     setErroRevogacao('')
     setMensagemSucesso('')
+    setStatusComFoco(null)
     setCertificadoSelecionado({ id: certificadoId, nomeAluno })
   }
 
@@ -45,10 +55,21 @@ export function PainelPage() {
     setErroRevogacao('')
     try {
       await revogarMutation.mutateAsync(Number(certificadoSelecionado.id))
+      setStatusComFoco(certificadoSelecionado.id)
       setCertificadoSelecionado(null)
       setMensagemSucesso('Certificado revogado com sucesso.')
     } catch (error) {
-      setErroRevogacao(error instanceof ApiError ? error.mensagem : MENSAGEM_ERRO_GENERICA)
+      if (
+        error instanceof ApiError &&
+        error.status === 400 &&
+        error.mensagem === MENSAGEM_CERTIFICADO_JA_REVOGADO
+      ) {
+        setStatusComFoco(certificadoSelecionado.id)
+        setCertificadoSelecionado(null)
+        setMensagemSucesso('Este certificado já estava revogado.')
+      } else {
+        setErroRevogacao(error instanceof ApiError ? error.mensagem : MENSAGEM_ERRO_GENERICA)
+      }
     } finally {
       confirmacaoEmAndamento.current = false
     }
@@ -121,6 +142,8 @@ export function PainelPage() {
                   <td>{formatarDataEmissao(certificado.dataEmissao)}</td>
                   <td>
                     <span
+                      ref={statusComFoco === certificado.certificadoId ? statusFocusRef : undefined}
+                      tabIndex={statusComFoco === certificado.certificadoId ? -1 : undefined}
                       className={`${styles.badge} ${certificado.status === 'valido' ? styles.valid : styles.revoked}`}
                     >
                       {certificado.status === 'valido' ? 'Válido' : 'Revogado'}
@@ -166,6 +189,9 @@ export function PainelPage() {
       >
         {erroRevogacao && <Alert variant="error">{erroRevogacao}</Alert>}
         <div className={styles.modalActions}>
+          {revogarMutation.isPending && (
+            <span className={styles.pendingStatus} role="status">Revogando…</span>
+          )}
           <Button
             type="button"
             variant="secondary"
