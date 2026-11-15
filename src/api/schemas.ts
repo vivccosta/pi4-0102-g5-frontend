@@ -28,3 +28,10 @@ export const ValidarCertificadoResponseSchema = z.object({
   hash: z.string().optional(),
 })
 export type ValidarCertificadoResponse = z.infer<typeof ValidarCertificadoResponseSchema>
+
+export const RegistrarCertificadoResponseSchema = z.object({
+  sucesso: z.boolean(),
+  mensagem: z.string(),
+  hash: z.string().trim().min(1),
+})
+export type RegistrarCertificadoResponse = z.infer<typeof RegistrarCertificadoResponseSchema>

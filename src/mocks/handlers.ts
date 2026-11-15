@@ -5,6 +5,41 @@ import { erroEnvelope, gerarMockJwt } from './helpers'
  * Handlers do MSW para simulação dos contratos do Backend 1.
  */
 export const handlers: HttpHandler[] = [
+  // CT4/CT8: registro autenticado de certificado.
+  http.post('*/api/certificados/registrar', async ({ request }) => {
+    const authorization = request.headers.get('Authorization')
+    if (!authorization) return new HttpResponse(null, { status: 403 })
+    if (authorization === 'Bearer token-401') {
+      return erroEnvelope(401, 'Sua sessão expirou. Entre novamente.')
+    }
+    if (authorization === 'Bearer token-403') {
+      return erroEnvelope(403, 'Você não tem permissão para registrar este certificado.')
+    }
+
+    let body: unknown
+    try {
+      body = await request.json()
+    } catch {
+      return erroEnvelope(400, 'Corpo da requisição inválido.')
+    }
+    if (!body || typeof body !== 'object') return erroEnvelope(400, 'Dados do certificado inválidos.')
+    const dados = body as Record<string, unknown>
+    if (dados.curso === 'mock-erro-400') return erroEnvelope(400, 'Verifique os dados do certificado.')
+    if (dados.curso === 'mock-erro-500') return erroEnvelope(500, 'Falha interna.')
+    if (
+      typeof dados.nomeAluno !== 'string' || !dados.nomeAluno.trim() ||
+      typeof dados.cpfAluno !== 'string' || !/^\d{11}$/.test(dados.cpfAluno) ||
+      typeof dados.curso !== 'string' || !dados.curso.trim() ||
+      typeof dados.cargaHoraria !== 'number' || !Number.isInteger(dados.cargaHoraria) || dados.cargaHoraria < 1 ||
+      typeof dados.dataConclusao !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(dados.dataConclusao)
+    ) return erroEnvelope(400, 'Dados do certificado inválidos.')
+
+    return HttpResponse.json({
+      sucesso: true,
+      mensagem: 'Certificado registrado com sucesso.',
+      hash: `0x${'a'.repeat(64)}`,
+    })
+  }),
   // CT9/CT14: validação pública por chave (sem Authorization)
   http.post('*/api/certificados/validar', async ({ request }) => {
     const body = await request.formData()
