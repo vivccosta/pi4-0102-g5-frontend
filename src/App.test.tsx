@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { MemoryRouter } from 'react-router'
 import { App } from './App'
@@ -70,8 +71,13 @@ describe('Roteamento da aplicação', () => {
     sessionStorage.setItem('timbro.sessao', JSON.stringify({
       token: 'token', nome: 'Emissor', perfil: 'EMISSOR', exp: Math.floor(Date.now() / 1000) + 3600,
     }))
-    render(<MemoryRouter initialEntries={['/admin/emissores']}><App /></MemoryRouter>)
-    expect(screen.getByRole('heading', { level: 1, name: 'Painel do emissor' })).toBeInTheDocument()
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/admin/emissores']}><App /></MemoryRouter>
+      </QueryClientProvider>,
+    )
+    expect(screen.getByRole('heading', { level: 1, name: 'Meus certificados' })).toBeInTheDocument()
   })
 
   it('redireciona administrador que acessa painel do emissor para sua home', () => {
