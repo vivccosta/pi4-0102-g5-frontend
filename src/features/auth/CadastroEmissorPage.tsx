@@ -10,11 +10,10 @@ import { Alert } from '@/components/ui/Alert'
 import { Button } from '@/components/ui/Button'
 import { Field } from '@/components/ui/Field'
 import { formatarCnpjCpf, validarCnpjCpf } from '@/lib/cnpjCpf'
-import { somenteDigitosCpf } from '@/lib/cpf'
 import styles from './LoginPage.module.css'
 
 const CadastroFormSchema = CadastrarEmissorRequestSchema.extend({
-  cnpjCpf: z.string().refine(validarCnpjCpf, 'Informe um CPF ou CNPJ válido'),
+  cnpj: z.string().refine((value) => value.replace(/\D/g, '').length === 14 && validarCnpjCpf(value), 'Informe um CNPJ válido'),
   confirmarSenha: z.string().min(1, 'Confirme a senha'),
 }).superRefine((dados, contexto) => {
   if (dados.senha !== dados.confirmarSenha) {
@@ -28,7 +27,7 @@ export function CadastroEmissorPage() {
   const [mensagemSucesso, setMensagemSucesso] = useState<string | null>(null)
   const { register, handleSubmit, setValue, formState: { errors, isSubmitting } } = useForm<CadastroForm>({
     resolver: zodResolver(CadastroFormSchema),
-    defaultValues: { nome: '', email: '', cnpjCpf: '', senha: '', confirmarSenha: '' },
+    defaultValues: { nome: '', email: '', cnpj: '', senha: '', confirmarSenha: '' },
   })
 
   const onSubmit = async (dados: CadastroForm) => {
@@ -37,7 +36,7 @@ export function CadastroEmissorPage() {
       const resposta = await cadastrarEmissor({
         nome: dados.nome,
         email: dados.email,
-        cnpjCpf: somenteDigitosCpf(dados.cnpjCpf),
+        cnpj: dados.cnpj.replace(/\D/g, ''),
         senha: dados.senha,
       })
       setMensagemSucesso(resposta)
@@ -69,11 +68,11 @@ export function CadastroEmissorPage() {
           <Field label="Nome do emissor (empresa ou MEI)" autoComplete="organization" required error={errors.nome?.message} {...register('nome')} />
           <Field label="E-mail" type="email" autoComplete="email" required error={errors.email?.message} {...register('email')} />
           <Field
-            label="CNPJ ou CPF" inputMode="numeric" autoComplete="off" required
-            hint="Informe CPF ou CNPJ com dígitos verificadores."
-            error={errors.cnpjCpf?.message}
-            {...register('cnpjCpf', { onChange: (event: React.ChangeEvent<HTMLInputElement>) => {
-              setValue('cnpjCpf', formatarCnpjCpf(event.target.value), { shouldValidate: true })
+            label="CNPJ" inputMode="numeric" autoComplete="off" required
+            hint="Informe CNPJ com 14 dígitos verificadores."
+            error={errors.cnpj?.message}
+            {...register('cnpj', { onChange: (event: React.ChangeEvent<HTMLInputElement>) => {
+              setValue('cnpj', formatarCnpjCpf(event.target.value), { shouldValidate: true })
             } })}
           />
           <Field label="Senha" type="password" autoComplete="new-password" required error={errors.senha?.message} {...register('senha')} />

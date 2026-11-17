@@ -64,7 +64,7 @@ describe('AuthContext e useAuth', () => {
     const agora = Math.floor(Date.now() / 1000)
     const token = gerarMockJwt({
       sub: 'usuario@timbro.test',
-      id: 'emissor-uuid-999',
+      id: 999,
       perfil: 'EMISSOR',
       nome: 'Carlos Emissor',
       exp: agora + 3600,
@@ -84,13 +84,13 @@ describe('AuthContext e useAuth', () => {
 
     expect(result.current.isAuthenticated).toBe(true)
     expect(result.current.session?.perfil).toBe('EMISSOR')
-    expect(result.current.session?.emissorId).toBe('emissor-uuid-999')
+    expect(result.current.session?.emissorId).toBe('999')
     expect(result.current.session?.nome).toBe('Carlos Emissor')
     expect(result.current.session?.exp).toBe(agora + 3600)
 
     const stored = JSON.parse(sessionStorage.getItem('timbro.sessao') || '{}')
     expect(stored.perfil).toBe('EMISSOR')
-    expect(stored.emissorId).toBe('emissor-uuid-999')
+    expect(stored.emissorId).toBe('999')
   })
 
   it('logout limpa o sessionStorage, limpa o queryClient e reseta o estado', () => {

@@ -18,7 +18,7 @@ describe('API de emissores pendentes', () => {
     saveSession({ token: 'token-vazio', nome: 'Admin', perfil: 'ADMINISTRADOR', emissorId: 'admin-1', exp: Math.floor(Date.now() / 1000) + 3600 })
     expect(await listarEmissoresPendentes()).toEqual([])
     saveSession({ token: 'admin-token', nome: 'Admin', perfil: 'ADMINISTRADOR', emissorId: 'admin-1', exp: Math.floor(Date.now() / 1000) + 3600 })
-    await expect(ativarEmissor('emissor-pendente-1')).resolves.toBe('Emissor ativado.')
+    await expect(ativarEmissor('1')).resolves.toBe('Emissor ativado.')
     expect(await listarEmissoresPendentes()).toHaveLength(2)
   })
 
