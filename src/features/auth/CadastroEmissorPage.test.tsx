@@ -18,7 +18,7 @@ function renderCadastro(initialEntry = '/emissor/cadastro') {
 async function preencherCadastro(user: ReturnType<typeof userEvent.setup>, email = 'nova@timbro.test') {
   await user.type(screen.getByLabelText(/Nome do emissor/), 'Instituto Exemplo')
   await user.type(screen.getByLabelText(/E-mail/), email)
-  await user.type(screen.getByLabelText(/CNPJ ou CPF/), '52998224725')
+  await user.type(screen.getByLabelText(/CNPJ/), '11222333000181')
   await user.type(screen.getByLabelText(/^Senha/), 'senha123')
   await user.type(screen.getByLabelText(/Confirmar senha/), 'senha123')
 }
@@ -41,12 +41,12 @@ describe('CadastroEmissorPage', () => {
     const user = userEvent.setup()
     renderCadastro()
     await preencherCadastro(user)
-    await user.clear(screen.getByLabelText(/CNPJ ou CPF/))
-    await user.type(screen.getByLabelText(/CNPJ ou CPF/), '12345678901')
+    await user.clear(screen.getByLabelText(/CNPJ/))
+    await user.type(screen.getByLabelText(/CNPJ/), '12345678901234')
     await user.clear(screen.getByLabelText(/Confirmar senha/))
     await user.type(screen.getByLabelText(/Confirmar senha/), 'diferente')
     await user.click(screen.getByRole('button', { name: 'Solicitar cadastro' }))
-    expect(await screen.findByText('Informe um CPF ou CNPJ válido')).toBeInTheDocument()
+    expect(await screen.findByText('Informe um CNPJ válido')).toBeInTheDocument()
     expect(screen.getByText('As senhas devem ser iguais')).toBeInTheDocument()
   })
 

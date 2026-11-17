@@ -42,8 +42,8 @@ export function decodeJwtPayload(token: string): DecodedJwtPayload | null {
     if (perfilStr !== 'EMISSOR' && perfilStr !== 'ADMINISTRADOR') return null
 
     const emissorId =
-      typeof raw.id === 'string'
-        ? raw.id
+      typeof raw.id === 'string' || typeof raw.id === 'number'
+        ? String(raw.id)
         : typeof raw.emissorId === 'string'
           ? raw.emissorId
           : undefined

@@ -27,12 +27,12 @@ beforeEach(() => {
 })
 
 describe('AdminEmissoresPage', () => {
-  it('lista dados, formata CPF/CNPJ e avisa quando a documentação não está disponível', async () => {
+  it('lista dados, formata CNPJ e avisa quando a documentação não está disponível', async () => {
     renderAdmin()
     expect(await screen.findByRole('heading', { name: 'Emissores pendentes' })).toBeInTheDocument()
     expect(await screen.findByText('12.345.678/0001-95')).toBeInTheDocument()
-    expect(screen.getByText('123.456.789-01')).toBeInTheDocument()
-    expect(screen.getByText('Documento 123')).toBeInTheDocument()
+    expect(screen.getByText('11.222.333/0001-81')).toBeInTheDocument()
+    expect(screen.getByText('04.252.011/0001-10')).toBeInTheDocument()
     expect(screen.getAllByText('Pendente')).toHaveLength(3)
     expect(screen.getAllByText('Documentação não disponível na API ainda.')).toHaveLength(3)
   })
@@ -66,7 +66,7 @@ describe('AdminEmissoresPage', () => {
 
   it('renderiza links http(s) seguros e exibe HTML como texto', async () => {
     server.use(http.get('*/api/admin/emissores/pendentes', () => HttpResponse.json([
-      { emissorId: 'docs', nome: 'Instituto Docs', email: 'docs@timbro.test', cnpjCpf: '12', status: 'PENDENTE', documentacao: ['https://example.test/doc', '<img src=x onerror=alert(1)>', 'javascript:alert(1)'] },
+      { emissorId: 4, nome: 'Instituto Docs', email: 'docs@timbro.test', cnpj: '11222333000181', status: 'PENDENTE', documentacao: ['https://example.test/doc', '<img src=x onerror=alert(1)>', 'javascript:alert(1)'] },
     ])))
     renderAdmin()
     const link = await screen.findByRole('link', { name: 'https://example.test/doc' })

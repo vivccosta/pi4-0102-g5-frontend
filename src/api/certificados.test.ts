@@ -63,14 +63,14 @@ describe('registrarCertificado', () => {
 })
 
 describe('listarCertificados', () => {
-  it('usa o emissorId na URL e normaliza status e chave na borda da API', async () => {
+  it('usa o emissorId na URL e normaliza id numérico, status e chave na borda da API', async () => {
     let urlRecebida = ''
     let authorization: string | null = null
     server.use(http.get('*/api/emissores/:emissorId/certificados', ({ request }) => {
       urlRecebida = request.url
       authorization = request.headers.get('Authorization')
       return HttpResponse.json([{
-        certificadoId: 'certificado 1',
+        certificadoId: 41,
         nomeAluno: 'Ana Exemplo',
         hash: '  chave\n de teste  ',
         dataEmissao: '2026-10-14T09:30:00',
@@ -82,12 +82,21 @@ describe('listarCertificados', () => {
     expect(urlRecebida).toBe('http://localhost:8080/api/emissores/emissor%20da%20PUC/certificados')
     expect(authorization).toBe('Bearer token-teste')
     expect(resultado).toEqual([{
-      certificadoId: 'certificado 1',
+      certificadoId: '41',
       nomeAluno: 'Ana Exemplo',
       hash: 'chavedeteste',
       dataEmissao: '2026-10-14T09:30:00',
       status: 'valido',
     }])
+  })
+
+  it('aceita wrapper CT15 e campos opcionais nulos, sem id para revogar', async () => {
+    server.use(http.get('*/api/emissores/:emissorId/certificados', () => HttpResponse.json({ certificados: [{
+      nomeAluno: 'Aluno Exemplo', hash: 'chave', dataEmissao: '2026-11-16T10:00:00', status: 'VALIDO', curso: null,
+    }] })))
+    const [certificado] = await listarCertificados('7')
+    expect(certificado).toMatchObject({ curso: null, status: 'valido' })
+    expect(certificado).not.toHaveProperty('certificadoId')
   })
 
   it('valida lista vazia e certificado com curso ausente', async () => {

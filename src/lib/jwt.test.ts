@@ -15,7 +15,7 @@ describe('decodeJwtPayload', () => {
     const token = createToken({
       sub: 'emissor@teste.com',
       perfil: 'EMISSOR',
-      id: 'emissor-123',
+      id: 123,
       iat: 1700000000,
       exp: 1700003600,
     })
@@ -24,7 +24,7 @@ describe('decodeJwtPayload', () => {
     expect(decoded).toEqual({
       sub: 'emissor@teste.com',
       perfil: 'EMISSOR',
-      id: 'emissor-123',
+      id: '123',
       iat: 1700000000,
       exp: 1700003600,
     })
@@ -41,6 +41,10 @@ describe('decodeJwtPayload', () => {
     const decoded = decodeJwtPayload(token)
     expect(decoded?.id).toBe('admin-456')
     expect(decoded?.perfil).toBe('ADMINISTRADOR')
+  })
+
+  it('normaliza claim id numérico para string', () => {
+    expect(decodeJwtPayload(createToken({ sub: 'e@teste.com', perfil: 'EMISSOR', id: 42, exp: 1700003600 }))?.id).toBe('42')
   })
 
   it('retorna null para token vazio ou com formato inválido', () => {

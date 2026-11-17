@@ -89,7 +89,7 @@ export function AdminEmissoresPage() {
                   <h2>{emissor.nome}</h2>
                   <dl>
                     <div><dt>E-mail</dt><dd>{emissor.email}</dd></div>
-                    <div><dt>Documento</dt><dd>{formatarDocumento(emissor.cnpjCpf)}</dd></div>
+                    <div><dt>CNPJ</dt><dd>{formatarDocumento(emissor.cnpj ?? emissor.cnpjCpf ?? '')}</dd></div>
                     <div><dt>Situação</dt><dd>Pendente</dd></div>
                   </dl>
                   <Documentacao emissor={emissor} />

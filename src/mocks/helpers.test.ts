@@ -33,7 +33,7 @@ describe('MSW infraestrutura e helpers', () => {
     const agora = Math.floor(Date.now() / 1000)
     const token = gerarMockJwt({
       sub: 'usuario@timbro.test',
-      id: 'usr-123',
+      id: 123,
       perfil: 'EMISSOR',
       nome: 'José Validação e Acentuação',
       exp: agora + 3600,
@@ -42,7 +42,7 @@ describe('MSW infraestrutura e helpers', () => {
     const decoded = decodeJwtPayload(token)
     expect(decoded).not.toBeNull()
     expect(decoded?.sub).toBe('usuario@timbro.test')
-    expect(decoded?.id).toBe('usr-123')
+    expect(decoded?.id).toBe('123')
     expect(decoded?.perfil).toBe('EMISSOR')
     expect(decoded?.exp).toBe(agora + 3600)
     expect(token.split('.')).toHaveLength(3)

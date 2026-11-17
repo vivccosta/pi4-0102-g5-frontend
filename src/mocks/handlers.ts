@@ -3,7 +3,7 @@ import { erroEnvelope, gerarMockJwt } from './helpers'
 
 const certificadosMock = [
   {
-    certificadoId: '1',
+    certificadoId: 1,
     nomeAluno: 'Ana Exemplo',
     hash: '0x7f83a1c4d2e6b809',
     dataEmissao: '2026-10-14T09:30:00',
@@ -11,7 +11,7 @@ const certificadosMock = [
     curso: 'Sistemas de Informação',
   },
   {
-    certificadoId: '2',
+    certificadoId: 2,
     nomeAluno: 'Bruno Exemplo',
     hash: '0xabcd1234ef567890',
     dataEmissao: '2026-10-15T12:45:00.123456',
@@ -20,9 +20,9 @@ const certificadosMock = [
 ]
 
 const emissoresPendentesIniciais = [
-  { emissorId: 'emissor-pendente-1', nome: 'Instituto Aurora', email: 'contato@aurora.timbro.test', cnpjCpf: '12345678000195', status: 'PENDENTE' },
-  { emissorId: 'emissor-pendente-2', nome: 'Marina Exemplo', email: 'marina@timbro.test', cnpjCpf: '12345678901', status: 'PENDENTE' },
-  { emissorId: 'emissor-pendente-3', nome: 'Centro Horizonte', email: 'secretaria@horizonte.timbro.test', cnpjCpf: 'Documento 123', status: 'PENDENTE' },
+  { emissorId: 1, nome: 'Instituto Aurora', email: 'contato@aurora.timbro.test', cnpj: '12345678000195', status: 'PENDENTE' },
+  { emissorId: 2, nome: 'Marina Exemplo', email: 'marina@timbro.test', cnpj: '11222333000181', status: 'PENDENTE' },
+  { emissorId: 3, nome: 'Centro Horizonte', email: 'secretaria@horizonte.timbro.test', cnpj: '04252011000110', status: 'PENDENTE' },
 ]
 let emissoresPendentesMock = emissoresPendentesIniciais.map((emissor) => ({ ...emissor }))
 
@@ -62,7 +62,7 @@ export const handlers: HttpHandler[] = [
     if (!body || typeof body !== 'object' || (body as Record<string, unknown>).novoStatus !== 'ATIVO') {
       return erroEnvelope(400, 'Status inválido.')
     }
-    emissoresPendentesMock = emissoresPendentesMock.filter((emissor) => emissor.emissorId !== emissorId)
+    emissoresPendentesMock = emissoresPendentesMock.filter((emissor) => String(emissor.emissorId) !== emissorId)
     return new HttpResponse('Emissor ativado.', { status: 200, headers: { 'Content-Type': 'text/plain' } })
   }),
   // CT15: histórico de certificados autenticado do emissor.
@@ -100,7 +100,7 @@ export const handlers: HttpHandler[] = [
     if (certificadoId === '500') return erroEnvelope(500, 'Falha na comunicação com a blockchain.')
     if (certificadoId === '21') await delay(21_000)
 
-    const certificado = certificadosMock.find((item) => item.certificadoId === certificadoId)
+    const certificado = certificadosMock.find((item) => String(item.certificadoId) === certificadoId)
     if (!certificado) return erroEnvelope(404, 'Certificado não encontrado.')
     certificado.status = 'INVALIDO'
     return HttpResponse.json({ sucesso: true, mensagem: 'Certificado revogado com sucesso.' })
@@ -147,15 +147,15 @@ export const handlers: HttpHandler[] = [
     if (chave === 'erro500') return erroEnvelope(500, 'Falha interna.')
     if (chave === 'lento') await new Promise((resolve) => setTimeout(resolve, 21_000))
     if (chave === 'chave-revogada') {
-      return HttpResponse.json({ valido: false, mensagem: 'Certificado inválido: Certificado revogado.' })
+      return HttpResponse.json({ valido: false, mensagem: 'Certificado inválido: Certificado revogado.', nomeAluno: null, curso: null, dataConclusao: null, hash: null })
     }
     if (chave === 'chave-desconhecida') {
-      return HttpResponse.json({ valido: false, mensagem: 'Certificado inválido: Chave de autenticação desconhecida.' })
+      return HttpResponse.json({ valido: false, mensagem: 'Certificado inválido: Chave de autenticação desconhecida.', nomeAluno: null, curso: null, dataConclusao: null, hash: null })
     }
     if (chave === 'chave-exemplo') {
       return HttpResponse.json({ valido: true, mensagem: 'Certificado válido.', nomeAluno: 'Ana Exemplo', curso: 'Sistemas de Informação', dataConclusao: '2026-10-14', hash: '0x7f83a1c4d2e6b809' })
     }
-    return HttpResponse.json({ valido: false, mensagem: 'Certificado inválido: Chave de autenticação desconhecida.' })
+    return HttpResponse.json({ valido: false, mensagem: 'Certificado inválido: Chave de autenticação desconhecida.', nomeAluno: null, curso: null, dataConclusao: null, hash: null })
   }),
   // CT1/CT3: POST /api/auth/login
   http.post('*/api/auth/login', async ({ request }) => {
@@ -177,7 +177,7 @@ export const handlers: HttpHandler[] = [
     if (email === 'emissor@timbro.test' && senha === 'Senha@123') {
       const token = gerarMockJwt({
         sub: 'emissor@timbro.test',
-        id: 'emissor-uuid-1',
+        id: 1,
         perfil: 'EMISSOR',
         nome: 'Emissor Demonstração',
       })
@@ -192,7 +192,7 @@ export const handlers: HttpHandler[] = [
     if (email === 'admin@timbro.test' && senha === 'Senha@123') {
       const token = gerarMockJwt({
         sub: 'admin@timbro.test',
-        id: 'admin-uuid-1',
+        id: 99,
         perfil: 'ADMINISTRADOR',
         nome: 'Administrador Timbro',
       })
@@ -236,7 +236,7 @@ export const handlers: HttpHandler[] = [
     if (
       typeof dados.nome !== 'string' || !dados.nome.trim() ||
       typeof dados.email !== 'string' || !dados.email.includes('@') ||
-      typeof dados.cnpjCpf !== 'string' || !/^\d{11}$|^\d{14}$/.test(dados.cnpjCpf) ||
+      typeof dados.cnpj !== 'string' || !/^\d{14}$/.test(dados.cnpj) ||
       typeof dados.senha !== 'string' || dados.senha.length < 8
     ) return erroEnvelope(400, 'Dados do cadastro inválidos.')
     if (dados.email === 'erro500@timbro.test') return erroEnvelope(500, 'Falha interna.')

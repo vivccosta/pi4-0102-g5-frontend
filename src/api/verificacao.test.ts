@@ -28,6 +28,11 @@ describe('validarCertificado', () => {
     await expect(validarCertificado('nao-existe')).resolves.toMatchObject({ valido: false })
   })
 
+  it('normaliza CT14 com status e campos Lombok nulos como inválido', async () => {
+    server.use(http.post('*/api/certificados/validar', () => HttpResponse.json({ status: 'INVALIDO', mensagem: 'Certificado inválido.', nomeAluno: null, curso: null, dataConclusao: null, hash: null })))
+    await expect(validarCertificado('desconhecida')).resolves.toMatchObject({ valido: false, nomeAluno: null, hash: null })
+  })
+
   it('aborta requisição cancelada e expõe erro de timeout da camada HTTP', async () => {
     server.use(http.post('*/api/certificados/validar', async () => {
       await new Promise((resolve) => setTimeout(resolve, 100))

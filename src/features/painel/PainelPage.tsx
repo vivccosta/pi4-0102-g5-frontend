@@ -134,8 +134,8 @@ export function PainelPage() {
               </tr>
             </thead>
             <tbody>
-              {certificados.map((certificado) => (
-                <tr key={certificado.certificadoId}>
+              {certificados.map((certificado, index) => (
+                <tr key={certificado.certificadoId ?? `sem-id-${index}`}>
                   <td>{certificado.nomeAluno}</td>
                   {/* TODO(contrato): curso ainda não é devolvido pelo DTO do Backend 1. */}
                   <td>{certificado.curso ?? '—'}</td>
@@ -158,12 +158,12 @@ export function PainelPage() {
                     </div>
                   </td>
                   <td>
-                    {certificado.status === 'valido' && (
+                    {certificado.status === 'valido' && certificado.certificadoId && (
                       <Button
                         type="button"
                         variant="secondary"
                         className={styles.revokeButton}
-                        onClick={() => abrirConfirmacao(certificado.certificadoId, certificado.nomeAluno)}
+                        onClick={() => certificado.certificadoId && abrirConfirmacao(certificado.certificadoId, certificado.nomeAluno)}
                       >
                         Revogar
                       </Button>

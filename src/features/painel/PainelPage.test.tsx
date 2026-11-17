@@ -142,7 +142,7 @@ describe('PainelPage', () => {
   it('chama uma vez ao confirmar e só atualiza a situação após a resposta', async () => {
     const user = userEvent.setup()
     const certificado = {
-      certificadoId: '1',
+      certificadoId: 1,
       nomeAluno: 'Ana Exemplo',
       hash: '0x7f83a1c4d2e6b809',
       dataEmissao: '2026-10-14T09:30:00',

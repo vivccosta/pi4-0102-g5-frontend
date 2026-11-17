@@ -28,7 +28,7 @@ export function base64UrlEncode(str: string): string {
 
 export interface MockJwtClaims {
   sub: string
-  id?: string
+  id?: number
   perfil: 'EMISSOR' | 'ADMINISTRADOR'
   nome: string
   iat?: number
@@ -46,7 +46,7 @@ export function gerarMockJwt(claims: MockJwtClaims): string {
 
   const payload = {
     sub: claims.sub,
-    id: claims.id ?? 'mock-uuid-1',
+    id: claims.id ?? 1,
     perfil: claims.perfil,
     nome: claims.nome,
     iat: claims.iat ?? agoraSegundos,
