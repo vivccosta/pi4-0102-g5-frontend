@@ -224,3 +224,25 @@ describe('request (http client)', () => {
     unsubscribe()
   })
 })
+
+describe('request: corpo de texto puro com Content-Type application/json', () => {
+  it('aceita a mensagem de texto do backend (CT8) mesmo rotulada como application/json', async () => {
+    window.__TIMBRO_CONFIG__ = { apiUrl: 'http://localhost:8080' }
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      new Response('Cadastro realizado com sucesso. Aguardando aprovação do administrador.', {
+        status: 201,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    )
+
+    const resultado = await request('/api/emissores/cadastrar', {
+      method: 'POST',
+      auth: 'none',
+      body: { nome: 'X' },
+      acceptedStatuses: [201],
+      schema: z.string(),
+    })
+
+    expect(resultado).toBe('Cadastro realizado com sucesso. Aguardando aprovação do administrador.')
+  })
+})

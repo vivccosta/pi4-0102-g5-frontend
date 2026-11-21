@@ -154,32 +154,23 @@ export async function request<TResponse = unknown>(
   let rawData: unknown
   const contentType = response.headers.get('content-type') || ''
 
-  if (contentType.includes('application/json')) {
+  // Lê sempre como texto e tenta JSON. O backend pode responder texto puro rotulado como
+  // application/json (ex.: Spring com Accept: application/json); response.json() falharia aí.
+  try {
+    const text = await response.text()
     try {
-      rawData = await response.json()
+      rawData = JSON.parse(text)
     } catch {
-      rawData = null
+      rawData = text
     }
-  } else {
-    // Tolerância a resposta não-JSON (lê como texto puro)
-    try {
-      const text = await response.text()
-      try {
-        rawData = JSON.parse(text)
-      } catch {
-        rawData = text
-      }
-    } catch {
-      rawData = ''
-    }
+  } catch {
+    rawData = contentType.includes('application/json') ? null : ''
   }
 
   if (schema) {
     const result = schema.safeParse(rawData)
     if (!result.success) {
-      const details = result.error.issues
-        .map((i) => `${i.path.join('.')}: ${i.message}`)
-        .join(', ')
+      const details = result.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join(', ')
       throw ApiError.contrato(details)
     }
     return result.data
